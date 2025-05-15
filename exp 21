@@ -1,0 +1,25 @@
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+
+int main() {
+    int fd;
+    char buffer[100];
+    char *text = "UNIX file system call demo.";
+
+    // Write to file
+    fd = open("file.txt", O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    write(fd, text, strlen(text));
+    close(fd);
+
+    // Read from file
+    fd = open("file.txt", O_RDONLY);
+    int n = read(fd, buffer, sizeof(buffer) - 1);
+    buffer[n] = '\0';  // Null-terminate the string
+
+    printf("File Content: %s\n", buffer);
+    close(fd);
+
+    return 0;
+}
