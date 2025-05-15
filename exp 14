@@ -1,0 +1,54 @@
+#include <stdio.h>
+
+int search(int frames[], int n, int key) {
+    for (int i = 0; i < n; i++)
+        if (frames[i] == key) return 1;
+    return 0;
+}
+
+int predict(int pages[], int frames[], int n, int index, int size) {
+    int farthest = index, res = -1;
+    for (int i = 0; i < n; i++) {
+        int j;
+        for (j = index; j < size; j++) {
+            if (frames[i] == pages[j]) {
+                if (j > farthest) {
+                    farthest = j;
+                    res = i;
+                }
+                break;
+            }
+        }
+        if (j == size)
+            return i;
+    }
+    return (res == -1) ? 0 : res;
+}
+
+void optimal(int pages[], int size, int n) {
+    int frames[n];
+    for (int i = 0; i < n; i++) frames[i] = -1;
+
+    int faults = 0;
+    for (int i = 0; i < size; i++) {
+        if (search(frames, n, pages[i]))
+            continue;
+
+        if (i < n) {
+            frames[i] = pages[i];
+        } else {
+            int j = predict(pages, frames, n, i + 1, size);
+            frames[j] = pages[i];
+        }
+        faults++;
+    }
+    printf("Total Page Faults: %d\n", faults);
+}
+
+int main() {
+    int pages[] = {7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3};
+    int size = sizeof(pages) / sizeof(pages[0]);
+    int frames = 3;
+    optimal(pages, size, frames);
+    return 0;
+}
