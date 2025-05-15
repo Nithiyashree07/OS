@@ -1,0 +1,88 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+sem_t rw_mutex;     // Controls access to the shared resource (writer)
+sem_t mutex;        // Protects read_count variable
+int read_count = 0; // Number of readers currently reading
+
+void* reader(void* arg) {
+    int reader_id = *(int*)arg;
+
+    while (1) {
+        sem_wait(&mutex);
+        read_count++;
+        if (read_count == 1) {
+            sem_wait(&rw_mutex);  // First reader locks resource for writers
+        }
+        sem_post(&mutex);
+
+        // Reading section
+        printf("Reader %d is reading\n", reader_id);
+        sleep(1);
+
+        sem_wait(&mutex);
+        read_count--;
+        if (read_count == 0) {
+            sem_post(&rw_mutex);  // Last reader releases resource
+        }
+        sem_post(&mutex);
+
+        sleep(1);
+    }
+    return NULL;
+}
+
+void* writer(void* arg) {
+    int writer_id = *(int*)arg;
+
+    while (1) {
+        sem_wait(&rw_mutex);
+
+        // Writing section
+        printf("Writer %d is writing\n", writer_id);
+        sleep(2);
+
+        sem_post(&rw_mutex);
+
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main() {
+    int i;
+    pthread_t rtid[5], wtid[2];
+    int rids[5], wids[2];
+
+    // Initialize semaphores
+    sem_init(&rw_mutex, 0, 1);
+    sem_init(&mutex, 0, 1);
+
+    // Create reader threads
+    for (i = 0; i < 5; i++) {
+        rids[i] = i + 1;
+        pthread_create(&rtid[i], NULL, reader, &rids[i]);
+    }
+
+    // Create writer threads
+    for (i = 0; i < 2; i++) {
+        wids[i] = i + 1;
+        pthread_create(&wtid[i], NULL, writer, &wids[i]);
+    }
+
+    // Join threads (not reachable since infinite loops)
+    for (i = 0; i < 5; i++) {
+        pthread_join(rtid[i], NULL);
+    }
+    for (i = 0; i < 2; i++) {
+        pthread_join(wtid[i], NULL);
+    }
+
+    // Destroy semaphores (never reached here)
+    sem_destroy(&rw_mutex);
+    sem_destroy(&mutex);
+
+    return 0;
+}
